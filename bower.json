@@ -1,0 +1,16 @@
+{
+  "name": "refactoring-js",
+  "version": "0.0.1",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "assets/components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "1.*"
+  }
+}
