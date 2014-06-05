@@ -1,12 +1,11 @@
 // Define form validation object below its namespace
 App.Forms.Validator = (function(){
 
-	// Define the container, constraints list and evaluation table variables
-	var container, constraints, evaluationList, errorList, errorMessage;
+	// Define the constraints list and evaluation table variables
+	var constraints, evaluationList, errorList, errorMessage;
 
 	// Constructor function
-	function Validator(container) {
-		this.container = container;
+	function Validator() {
 		this.constraints = {
 			"not_blank": this._notBlank,
 			"min_length": this._minLength,
@@ -82,23 +81,7 @@ App.Forms.Validator = (function(){
 	};
 
 	// Assign constraints to the field method
-	Validator.fn.setConstraint = function(fieldId, constraints, fieldName) {
-
-		// Check if the given field exists or throws an error otherwise
-		var field = this.container.find("#" + fieldId);
-		if (!field.length) {
-			throw new Error("Element not found in form.");
-		}
-
-		// Get the field value
-		var fieldValue = field.val();
-
-		// Bind the constraints to the field value
-		this._bindConstraints(fieldName, fieldValue, constraints);
-	};
-
-	// Bind constraints method
-	Validator.fn._bindConstraints = function(fieldName, fieldValue, constraints) {
+	Validator.fn.setConstraint = function(fieldValue, fieldName, constraints) {
 
 		// Check if the constraints list is an array
 		if (!$.isArray(constraints)) {

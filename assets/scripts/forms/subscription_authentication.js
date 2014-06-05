@@ -7,7 +7,7 @@ App.Forms.SubscriptionAuthentication = (function(){
 	// Constructor function
 	function SubscriptionAuthentication(container) {
 		this.container = container;
-		this.validator = new App.Forms.Validator(this.container); // Instantiate validator object (Should I inject it?)
+		this.validator = new App.Forms.Validator(); // Instantiate validator object (Should I inject it?)
 	}
 
 	// Assign the prototype object to the 'fn' property
@@ -22,8 +22,8 @@ App.Forms.SubscriptionAuthentication = (function(){
 
 	// Validation method
 	SubscriptionAuthentication.fn._validate = function() {
-		this.validator.setConstraint("name", ["not_blank", "length[5,60]"], "Name");
-		this.validator.setConstraint("email", ["not_blank", "email"], "Email");
+		this.validator.setConstraint(this.container.find("#name").val(), ["not_blank", "length[5,60]"], "Name");
+		this.validator.setConstraint(this.container.find("#email").val(), ["not_blank", "email"], "Email");
 		return this.validator.validate();
 	};
 
