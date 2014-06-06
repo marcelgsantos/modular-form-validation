@@ -12,6 +12,7 @@ App.Forms.Validator = (function(){
 			"max_length": this._maxLength,
 			"length": this._fullLength,
 			"email": this._email,
+			"url": this._url
 		};
 		this.errorMessage = {
 			"not_blank": "Field #1 should not be blank.",
@@ -19,69 +20,17 @@ App.Forms.Validator = (function(){
 			"max_length": "Field #1 should at maximum #2 characters.",
 			"length": "Field #1 should have betweeen #2 and #3 characters.",
 			"email": "Field #1 should have a valid email.",
+			"url": "Field #1 should have a valid url."
 		};
 		this.evaluationList = [];
-		this.errorList = [];
+		this.errorList = {};
 	}
 
 	// Assign the prototype object to the 'fn' property
 	Validator.fn = Validator.prototype;
 
-	// Validate form method
-	Validator.fn.validate = function() {
-
-		// Define evaluation and flag variables
-		var evaluation, flag = true;
-
-		// Clean th error list
-		this.errorList = [];
-
-		// Iterate over the evaluation list
-		for (var i = 0; i < this.evaluationList.length; i++) {
-
-			// Get field name, rule and arguments
-			fieldName = this.evaluationList[i].fieldName;
-			constraintRule = this.evaluationList[i].constraintRule;
-			constraintArgs = this.evaluationList[i].constraintArgs;
-
-			// Perform the evaluation
-			evaluation = this.constraints[constraintRule].apply(this, constraintArgs);
-
-			// Check if evaluation fails and push the error message to the error list
-			if (evaluation === false) {
-				flag = false;
-				this.errorList.push(this._getErrorMessage(fieldName, constraintRule, constraintArgs));
-			}
-		}
-
-		// Clean the evaluation list
-		this.evaluationList = [];
-
-		return flag;
-	};
-
-	// Get list of error messages
-	Validator.fn.getErrorMessage = function() {
-		return this.errorList;
-	};
-
-	// Get error message based in field name, rule and constraint arguments
-	Validator.fn._getErrorMessage = function(fieldName, constraintRule, constraintArgs) {
-
-		// Get the message associated with rule
-		var message = this.errorMessage[constraintRule];
-		message = message.replace("#1", fieldName);
-
-		// Iterate over arguments and replace them in the message (skip first argument - field value)
-		for (var i = 0; i < constraintArgs.length; i++)  {
-			message = message.replace("#" + (i+1), constraintArgs[i]);
-		}
-
-		return message;
-	};
-
 	// Assign constraints to the field method
-	Validator.fn.setConstraint = function(fieldValue, fieldName, constraints) {
+	Validator.fn.setConstraint = function(fieldId, fieldValue, constraints, fieldName) {
 
 		// Check if the constraints list is an array
 		if (!$.isArray(constraints)) {
@@ -113,11 +62,70 @@ App.Forms.Validator = (function(){
 
 			// Add evaluation rules in the evaluation table to be validate later
 			that.evaluationList.push({
+				"fieldId": fieldId,
 				"fieldName": fieldName,
 				"constraintRule": constraintRule,
 				"constraintArgs": constraintArgs
 			});
 		});
+	};
+
+	// Validate form method
+	Validator.fn.validate = function() {
+
+		// Define evaluation and flag variables
+		var evaluation, flag = true;
+
+		// Clean th error list
+		this.errorList = {};
+
+		// Iterate over the evaluation list
+		for (var i = 0; i < this.evaluationList.length; i++) {
+
+			// Get field name, rule and arguments
+			fieldId = this.evaluationList[i].fieldId;
+			fieldName = this.evaluationList[i].fieldName;
+			constraintRule = this.evaluationList[i].constraintRule;
+			constraintArgs = this.evaluationList[i].constraintArgs;
+
+			// Perform the evaluation
+			evaluation = this.constraints[constraintRule].apply(this, constraintArgs);
+
+			this.errorList[fieldId] = this.errorList[fieldId] || [];
+
+			// Check if evaluation fails and push the error message to the error list
+			if (evaluation === false) {
+				flag = false;
+
+				// Set error list by id
+				this.errorList[fieldId].push(this._getErrorMessage(fieldName, constraintRule, constraintArgs));
+			}
+		}
+
+		// Clean the evaluation list
+		this.evaluationList = [];
+
+		return flag;
+	};
+
+	// Get list of error messages
+	Validator.fn.getErrors = function() {
+		return this.errorList;
+	};
+
+	// Get error message based in field name, rule and constraint arguments
+	Validator.fn._getErrorMessage = function(fieldName, constraintRule, constraintArgs) {
+
+		// Get the message associated with rule
+		var message = this.errorMessage[constraintRule];
+		message = message.replace("#1", fieldName);
+
+		// Iterate over arguments and replace them in the message (skip first argument - field value)
+		for (var i = 0; i < constraintArgs.length; i++)  {
+			message = message.replace("#" + (i+1), constraintArgs[i]);
+		}
+
+		return message;
 	};
 
 	// Not blank validation method
@@ -143,7 +151,13 @@ App.Forms.Validator = (function(){
 	// Email regular expression validation method
 	Validator.fn._email = function(field) {
 		var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-		return re.test(field);
+		return !this._notBlank(field) || re.test(field);
+	};
+
+	// Url regular expression validation method
+	Validator.fn._url = function(field) {
+		var re = /^(https?|ftp):\/\/(((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?(((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?)(:\d*)?)(\/((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)?(\?((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(\#((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/i;
+		return !this._notBlank(field) || re.test(field);
 	};
 
 	// Expose constructor function to be assigned in global scope below its namespace
