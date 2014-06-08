@@ -6,8 +6,7 @@ App.Validator = {};
 // Perform the application initialization
 $(function(){
 
-	// Create the authentication form object and initialize it
-	var subscriptionAuthentication = new App.Forms.SubscriptionAuthentication($(".subscription-form"));
-	subscriptionAuthentication.init();
-
+    // Create the authentication form object and initialize it
+    var subscriptionAuthentication = new App.Forms.SubscriptionAuthentication($(".subscription-form"));
+    subscriptionAuthentication.init();
 });
